@@ -8,29 +8,31 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/all/pio/project/gilang/include",
-                "/home/all/pio/project/gilang/src",
+                "/home/a/Documents/PAGilang/include",
+                "/home/a/Documents/PAGilang/src",
+                "/home/a/Documents/PAGilang/.pio/libdeps/nanoatmega328/LiquidCrystal_I2C",
                 "/home/a/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/a/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
+                "/home/a/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                 "/home/a/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                 "/home/a/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                 "/home/a/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                 "/home/a/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
-                "/home/a/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                 ""
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/all/pio/project/gilang/include",
-                    "/home/all/pio/project/gilang/src",
+                    "/home/a/Documents/PAGilang/include",
+                    "/home/a/Documents/PAGilang/src",
+                    "/home/a/Documents/PAGilang/.pio/libdeps/nanoatmega328/LiquidCrystal_I2C",
                     "/home/a/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/a/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
+                    "/home/a/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                     "/home/a/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                     "/home/a/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                     "/home/a/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                     "/home/a/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
-                    "/home/a/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                     ""
                 ]
             },
