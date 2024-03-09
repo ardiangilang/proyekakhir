@@ -68,17 +68,19 @@ float dumDoa[8] = {98.24, 75.43, 67.35, 88.56, 86.23, 92.62, 79.12, 72.33};
 float dumDob[8] = {2.62, 3.12, 2.33, 4.24, 5.43, 6.35, 7.56, 6.23};
 float dumTemp[8] = {26.23, 24.62, 25.12, 23.33, 24.24, 29.43, 27.35, 26.56};
 
-struct payload_t
+struct master_slave_payload
 {
     unsigned long ms;
     unsigned long counter;
+    char status = 'x';
+};
+
+struct slave_master_payload
+{
+    unsigned long ms;
+    unsigned long counter;
+    uint16_t node_id;
     char message[32];
-    //  char pesanExtender[32];
-    uint16_t node_ID;
-    uint16_t perintahNode1[4];
-    uint16_t perintahNode2[4];
-    uint16_t perintahNode3[4];
-    uint16_t perintahNode4[4];
 };
 
 // untuk nilai sensor DO
@@ -124,83 +126,22 @@ void mintaData()
         last_sent = now;
 
         Serial.print(F("Sending... "));
-        const char message[] = "R";
-        payload_t payload;
-        payload.ms = millis();            // Timestamp
-        payload.counter = packets_sent++; // Counter
-        strcpy(payload.message, message); // Copy message into payload
+        master_slave_payload payload;
+        payload.ms = millis();
+        payload.counter = packets_sent++;
+        payload.status = 'R';
 
-        // Menggunakan switch case untuk mengirim bergantian antara node1 dan node2
-        switch (count)
+        for (size_t i = 0; i < 4; i++)
         {
-        case 0:
-        {
-            // Send to node1
-            RF24NetworkHeader header1(node1);
-            payload.node_ID = node1; // Tandai asal data sebagai node1
-            bool ok1 = network.write(header1, &payload, sizeof(payload));
+            RF24NetworkHeader header(i + 1);
+            bool ok1 = network.write(header, &payload, sizeof(payload));
+            Serial.print("Node ");
+            Serial.print(i);
+            Serial.print(" : ");
             if (ok1)
-            {
-                Serial.println(F("to node1: ok."));
-            }
+                Serial.println("Ok");
             else
-            {
-                Serial.println(F("to node1: failed."));
-            }
-            count = 1; // Set count ke 1 untuk mengirim ke node2 selanjutnya
-            break;
-        }
-        case 1:
-        {
-            // Send to node2
-            RF24NetworkHeader header2(node2);
-            payload.node_ID = node2; // Tandai asal data sebagai node2
-            bool ok2 = network.write(header2, &payload, sizeof(payload));
-            if (ok2)
-            {
-                Serial.println(F("to node2: ok."));
-            }
-            else
-            {
-                Serial.println(F("to node2: failed."));
-            }
-            count = 2; // Set count ke 0 untuk kembali mengirim ke node1 selanjutnya
-            break;
-        }
-        case 2:
-        {
-            // Send to node3
-            RF24NetworkHeader header3(node3);
-            payload.node_ID = node3; // Tandai asal data sebagai node2
-            bool ok3 = network.write(header3, &payload, sizeof(payload));
-            if (ok3)
-            {
-                Serial.println(F("to node3: ok."));
-            }
-            else
-            {
-                Serial.println(F("to node3: failed."));
-            }
-            count = 3; // Set count ke 0 untuk kembali mengirim ke node1 selanjutnya
-            break;
-        }
-        case 3:
-        {
-            // Send to node4
-            RF24NetworkHeader header4(node4);
-            payload.node_ID = node4; // Tandai asal data sebagai node2
-            bool ok4 = network.write(header4, &payload, sizeof(payload));
-            if (ok4)
-            {
-                Serial.println(F("to node4: ok."));
-            }
-            else
-            {
-                Serial.println(F("to node4: failed."));
-            }
-            count = 0; // Set count ke 0 untuk kembali mengirim ke node1 selanjutnya
-            break;
-        }
+                Serial.println("Failed");
         }
     }
 }
@@ -229,7 +170,7 @@ void terimaData()
     while (network.available())
     {
         RF24NetworkHeader header;
-        payload_t payload;
+        slave_master_payload payload;
         network.read(header, &payload, sizeof(payload));
 
         if (payload.counter > 0)
@@ -264,15 +205,15 @@ void kontrol()
     else
         _do_status = Tinggi;
 
-    char _temp_node[4] = {'0', '0', '0', '0'};
+    uint16_t _temp_node[4] = {'0', '0', '0', '0'};
 
     //  Serial.println("Nilai DO:" + String(fdomg));
 
     if (_do_status == Rendah)
     {
         Serial.println("DO Rendah");
-        char new_values[4] = {'1', '1', '1', '1'};
-        std::strcpy(_temp_node, new_values);
+        for (size_t i = 0; i < 4; i++)
+            _temp_node[i] = '1';
     }
     else if (_do_status == Normal)
     {
@@ -317,102 +258,35 @@ void kontrol()
     }
 
     // mengirim perintah ke tiap node
-    payload_t payload; // Variabel untuk menyimpan pesan yang akan dikirim
-    for (int i = 0; i < 4; i++)
-    {
-        payload.perintahNode1[i] = _temp_node[i] - '0'; // Konversi char ke int
-    }
-    RF24NetworkHeader header1(node1);
-    payload.node_ID = node1;
-    bool ok1 = network.write(header1, &payload, sizeof(payload));
-    if (ok1)
-    {
-        Serial.print(F("Kirim perintah ke node1:"));
-        Serial.println(_temp_node[0]);
-    }
-    else
-    {
-        Serial.println(F("Gagal kirim perintah ke node 1: failed."));
-    }
+    master_slave_payload payload; // Variabel untuk menyimpan pesan yang akan dikirim
+    payload.ms = millis();
+    payload.counter = packets_sent++;
 
-    delay(100); // Delay untuk memastikan pengiriman pesan selesai
+    for (size_t i = 0; i < 4; i++)
+    {
+        Serial.print(i);
+        Serial.print(" : ");
+        Serial.println(_temp_node[i]);
+    }
 
     for (int i = 0; i < 4; i++)
     {
-        payload.perintahNode2[i] = _temp_node[i] - '0'; // Konversi char ke int
+        RF24NetworkHeader header(i + 1);
+        payload.status = _temp_node[i];
+        bool ok = network.write(header, &payload, sizeof(payload));
+        if (ok)
+        {
+            Serial.print("to node ");
+            Serial.print(i + 1);
+            Serial.println(": ok.");
+        }
+        else
+        {
+            Serial.print("to node ");
+            Serial.print(i + 1);
+            Serial.println(": failed.");
+        }
     }
-    RF24NetworkHeader header2(node2);
-    payload.node_ID = node2;
-    bool ok2 = network.write(header2, &payload, sizeof(payload));
-    if (ok2)
-    {
-        //    Serial.print(F("Kirim perintah ke node2: "));
-        //    Serial.print(_temp_node[0] == '0' ? F("mati") : F("nyala"));
-        //    Serial.println(F(": ok."));
-
-        Serial.print(F("Kirim perintah ke node2: "));
-        Serial.println(_temp_node[0]);
-    }
-    else
-    {
-        Serial.println(F("Gagal kirim perintah ke node 2: failed."));
-    }
-
-    delay(100); // Delay untuk memastikan pengiriman pesan selesai
-
-    for (int i = 0; i < 4; i++)
-    {
-        payload.perintahNode3[i] = _temp_node[i] - '0'; // Konversi char ke int
-    }
-    RF24NetworkHeader header3(node3);
-    payload.node_ID = node3;
-    bool ok3 = network.write(header3, &payload, sizeof(payload));
-    if (ok3)
-    {
-
-        //    Serial.print(F("Kirim perintah ke node3: "));
-        //    Serial.print(_temp_node[0] == '0' ? F("mati") : F("nyala"));
-        //    Serial.println(F(": ok."));
-
-        Serial.print(F("Kirim perintah ke node3:"));
-        Serial.println(_temp_node[0]);
-    }
-    else
-    {
-        Serial.println(F("Gagal kirim perintah ke node 3: failed."));
-    }
-
-    delay(100); // Delay untuk memastikan pengiriman pesan selesai
-
-    for (int i = 0; i < 4; i++)
-    {
-        payload.perintahNode4[i] = _temp_node[i] - '0'; // Konversi char ke int
-    }
-    RF24NetworkHeader header4(node4);
-    payload.node_ID = node4;
-    bool ok4 = network.write(header4, &payload, sizeof(payload));
-    if (ok4)
-    {
-        //    Serial.print(F("Kirim perintah ke node4: "));
-        //    Serial.print(_temp_node[0] == '0' ? F("mati") : F("nyala"));
-        //    Serial.println(F(": ok."));
-
-        Serial.print(F("Kirim perintah ke node4:"));
-        Serial.println(_temp_node[0]);
-    }
-    else
-    {
-        Serial.println(F("Gagal kirim perintah ke node 4: failed."));
-    }
-
-    delay(100); // Delay untuk memastikan pengiriman pesan selesai
-
-    for (int i = 0; i < 4; i++)
-    {
-        Serial.print(_temp_node[i]);
-        Serial.print('/');
-    }
-    Serial.println();
 }
 
 unsigned long rtimer00 = 0, timer00 = 100;
@@ -446,13 +320,18 @@ void setup()
     last_sent = millis();
 }
 
+unsigned long _exec = 0;
+
 void loop()
 {
     mintaData();
     terimaData();
-    bacaDO();
-    kontrol();
-    //  kirimExtender();
+    if (millis() - _exec > 2000)
+    {
+        _exec = millis();
+        bacaDO();
+        kontrol();
+    }
 }
 
 // void mintaData() {
