@@ -30,9 +30,6 @@ enum DOStatus
 
 ParseData node_data[4]; // untuk menampilkan 4 data node sekaligus
 
-int interval1 = 2000;
-int count = 0;
-
 // topologi star
 const uint16_t master = 00;   // Address of our node in Octal format
 const uint16_t node1 = 01;    // Address of the other node in Octal format
@@ -92,7 +89,7 @@ ParseData parse_msg(const std::string &input)
     std::string token;
 
     if (getline(iss, token, ','))
-        _temp.node_id = strtod(token.c_str(), NULL);
+        _temp.node_id = int(strtod(token.c_str(), NULL));
 
     // Parse voltage
     if (getline(iss, token, ','))
@@ -119,7 +116,7 @@ void mintaData()
     unsigned long now = millis();
 
     // Jika sudah waktunya mengirim pesan, kirim pesan ke node yang sesuai
-    if (now - last_sent >= interval1)
+    if (now - last_sent >= 2000)
     {
         last_sent = now;
 
